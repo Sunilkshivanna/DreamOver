@@ -16,21 +16,23 @@ const CricketPrediction = () => {
         setOvers((prevOvers) => {
             const newOvers = [...prevOvers];
             const currentOver = { ...newOvers[overIndex] };
-
+    
             if (currentOver.isFrozen) return newOvers;
-
+    
             const balls = [...currentOver.balls];
             const legalBalls = balls.filter((ball) => ball !== "Wide" && ball !== "No Ball").length;
-
-            if (legalBalls >= BALLS_PER_OVER && run !== "Wide" && run !== "No Ball") return newOvers;
-
+    
+            // Prevent any further entries after 6 legitimate balls
+            if (legalBalls >= BALLS_PER_OVER) return newOvers;
+    
             balls.push(run);
             currentOver.balls = balls;
             newOvers[overIndex] = currentOver;
-
+    
             return newOvers;
         });
     };
+    
 
     const deleteLastEntry = (overIndex) => {
         setOvers((prevOvers) => {
@@ -78,7 +80,7 @@ const CricketPrediction = () => {
         setOvers((prevOvers) => {
             const newOvers = [...prevOvers];
 
-            if (overIndex >= 19) return newOvers; // Prevent copying to 21st over (out of bounds)
+            if (overIndex >= 19) return newOvers;
 
             const currentOver = { ...newOvers[overIndex] };
             const nextOver = { ...newOvers[overIndex + 1] };
@@ -87,7 +89,7 @@ const CricketPrediction = () => {
 
             if (legalBalls < BALLS_PER_OVER || nextOver.balls.length > 0) return newOvers;
 
-            nextOver.balls = [...currentOver.balls]; // Copy all balls
+            nextOver.balls = [...currentOver.balls];
             newOvers[overIndex + 1] = nextOver;
 
             return newOvers;
@@ -95,17 +97,13 @@ const CricketPrediction = () => {
     };
 
     const getBallStyle = (ball) => {
-        if (ball === "Wicket") return { backgroundColor: "red", color: "white" };
-        if (ball === "No Ball") return { backgroundColor: "blue", color: "white" };
-        if (ball === "Wide") return { backgroundColor: "green", color: "white" };
-        if (ball === "4" || ball === "6") return { color: "orange" };
+        if (ball === "Wicket") return { backgroundColor: "white", color: "Red" };
+        if (ball === "No Ball") return { backgroundColor: "red", color: "white" };
+        if (ball === "Wide") return { backgroundColor: "white", color: "green" };
+        if (ball === "4") return { backgroundColor: "green", color: "white" };
+        if (ball === "6") return { backgroundColor: "purple", color: "white" };
+        
         return { color: "black" };
-    };
-
-    const getOrdinal = (num) => {
-        const suffixes = ["th", "st", "nd", "rd"];
-        const v = num % 100;
-        return num + (suffixes[(v - 20) % 10] || suffixes[v] || suffixes[0]);
     };
 
     return (
@@ -115,26 +113,35 @@ const CricketPrediction = () => {
             <div style={styles.grid}>
                 {overs.map((over, index) => {
                     const legalBalls = over.balls.filter((ball) => ball !== "Wide" && ball !== "No Ball").length;
-                    const nextOverExists = index < 19;
-                    const isCopyEnabled = legalBalls === BALLS_PER_OVER && nextOverExists && overs[index + 1].balls.length === 0;
-
+                    const isCopyEnabled = legalBalls === BALLS_PER_OVER && index < 19 && overs[index + 1].balls.length === 0;
+                    const getOrdinal = (num) => {
+                        if (num % 10 === 1 && num % 100 !== 11) return `${num}st`;
+                        if (num % 10 === 2 && num % 100 !== 12) return `${num}nd`;
+                        if (num % 10 === 3 && num % 100 !== 13) return `${num}rd`;
+                        return `${num}th`;
+                    };
+                    
                     return (
                         <div key={index} style={{ ...styles.overBox, backgroundColor: over.isFrozen ? "#d4edda" : "#f9f9f9" }}>
                             <h4>Over {index + 1}</h4>
 
+                            {/* Ball Display Section (First Three Rows) */}
                             <div style={styles.ballDisplay}>
-                                {over.balls.length
-                                    ? over.balls.map((ball, i) => (
-                                          <div key={i} style={styles.ballContainer}>
-                                              <span style={styles.ballOrder}>{getOrdinal(i + 1)}</span>
-                                              <span style={{ ...styles.ballCircle, ...getBallStyle(ball) }}>
-                                                  {ball === "Wicket" ? "WK" : ball === "No Ball" ? "NB" : ball === "Wide" ? "WD" : ball}
-                                              </span>
-                                          </div>
-                                      ))
-                                    : "No predictions yet"}
+                                {over.balls.map((ball, i) => (
+                                    <div key={i} style={styles.ballContainer}>
+                                        <span style={styles.ballOrder}>{getOrdinal(i + 1)}</span>
+
+                                        <span style={{ ...styles.ballCircle, ...getBallStyle(ball) }}>
+                                            {ball === "Wicket" ? "WK" : ball === "No Ball" ? "NB" : ball === "Wide" ? "WD" : ball}
+                                        </span>
+                                    </div>
+                                ))}
                             </div>
 
+                            {/* Separator Line */}
+                            <hr style={styles.separator} />
+
+                            {/* Button Section at the Bottom */}
                             <div style={styles.buttonsContainer}>
                                 {runOptions.map((run, i) => (
                                     <button
@@ -185,40 +192,14 @@ const CricketPrediction = () => {
 };
 
 const styles = {
-    container: {
-        padding: "10px",
-        textAlign: "center",
-        fontFamily: "Arial, sans-serif",
-    },
-    grid: {
-        display: "grid",
-        gridTemplateColumns: "repeat(5, 1fr)",
-        gap: "10px",
-        justifyContent: "center",
-        padding: "10px",
-    },
-    overBox: {
-        border: "1px solid #ccc",
-        padding: "8px",
-        borderRadius: "5px",
-        textAlign: "center",
-    },
-    ballDisplay: {
-        display: "flex",
-        gap: "10px",
-        justifyContent: "center",
-        alignItems: "center",
-        marginBottom: "5px",
-    },
-    ballContainer: {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: "2px",
-    },
+    container: { padding: "10px", textAlign: "center", fontFamily: "Arial, sans-serif" },
+    grid: { display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "25px", justifyContent: "center", padding: "10px" },
+    overBox: { border: "10px solid #ccc", padding: "8px", borderRadius: "50px", textAlign: "center" },
+    ballDisplay: { display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "5px", justifyContent: "center", marginBottom: "50px", minHeight: "100px" },
+    ballContainer: { display: "flex", flexDirection: "column", alignItems: "center" },
     ballOrder: { fontSize: "10px", fontWeight: "bold", color: "red" },
-    ballCircle: { width: "30px", height: "30px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", fontWeight: "bold", border: "1px solid black" },
-    copyButton: { marginTop: "5px", padding: "5px", fontSize: "12px", backgroundColor: "#007bff", color: "white", border: "none", borderRadius: "3px", width: "100%" },
+    ballCircle: { width: "25px", height: "25px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", fontWeight: "bold", border: "3px solid black", fontSize: "14px" },
+    separator: { margin: "10px 0", borderTop: "2px solid grey" },
 };
 
 export default CricketPrediction;
