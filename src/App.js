@@ -1,17 +1,20 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Home from "./components/Home";   // Ensure this file exists
-import Login from "./components/Login"; // Ensure this file exists
+import Login from "./components/Login";
+import Dashboard from "./components/Dashboard";
+import Game from "./components/Game"; // ✅ Corrected Path
 
-function App() {
+
+const App = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Login />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/game" element={<Game />} />
       </Routes>
     </Router>
   );
-}
+};
 
 export default App;
